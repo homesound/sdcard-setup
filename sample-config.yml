@@ -1,0 +1,131 @@
+download:
+  url: https://downloads.raspberrypi.org/raspbian_lite_latest
+  force: false
+  name: ""
+  result: result
+  unzip: false
+
+mounts:
+  -
+    name: root
+    losetup:
+      dev: /dev/loop1
+      offset: 70254592
+    mountpoint: /mnt/root
+    pseudofs: true
+    bindfs:
+      user: guru
+      group: guru
+      mountpoint: /mnt/bind-root
+      create: true
+  -
+    name: boot
+    losetup:
+      dev: /dev/loop0
+      offset: 4194304
+    mountpoint: /mnt/root/boot
+    bindfs:
+      user: guru
+      group: guru
+      mountpoint: /mnt/bind-boot
+      create: true
+operations:
+  -
+    operation: append
+    sudo: true
+    target: /mnt/bind-boot/config.txt
+    data:
+      - ""
+      - "# HomeSound config"
+      - dtparam=act_led_trigger=default-on
+      - dtparam=act_led_activelow=on
+  -
+    operation: hostname
+    prefix: homesound
+    generator:
+      size: 4
+      type: hashid
+    join: "."
+    path: /mnt/bind-root
+  -
+    operation: append
+    sudo: true
+    target: /mnt/bind-root/etc/rc.local
+    data:
+      - "/bin/su -c '/usr/bin/pulseaudio --daemonize --realtime --no-cpu-limit --log-target=newfile:/tmp/pulseaudio.log' - guru"
+    before: "exit 0"
+  -
+    operation: chroot
+    name: fix-locale
+    commands:
+      - "echo 'en_US UTF-8 >>/etc/locale.gen'"
+      - "locale-gen en_US.UTF-8"
+    bindfs-path: /mnt/bind-root
+    path: /mnt/root
+  -
+    operation: chroot
+    name: add-custom-user
+    commands:
+      - "useradd guru"
+      - "echo 'guru:password' | chpasswd"
+      - "adduser guru sudo"
+      - "mkdir -p /home/guru"
+      - "cp -R /etc/skel/ /home/guru/"
+      - "chown -R guru:guru /home/guru/"
+    bindfs-path: /mnt/bind-root
+    path: /mnt/root
+  -
+    operation: chroot
+    name: go1.8
+    commands:
+      - "wget -N https://storage.googleapis.com/golang/go1.8.linux-armv6l.tar.gz"
+      - "tar -xzf go1.8.linux-armv6l.tar.gz -C /usr/local/"
+      - "chgrp guru /usr/local/go"
+      - "echo 'export PATH=$PATH:/usr/local/go/bin' >> /home/guru/.bashrc"
+      - "echo 'export GOPATH=/home/guru/workspace/go' >> /home/guru/.bashrc"
+    bindfs-path: /mnt/bind-root
+    path: /mnt/bind-root
+  -
+    operation: chroot
+    name: apt-packages
+    commands:
+      - "apt-get update"
+      - "apt-get -y upgrade"
+      - "apt-get -y autoremove"
+      - "apt-get -y install libiw-dev hostapd dnsmasq"
+#      - "apt-get -y install vim screen git libasound2-dev libpulse-dev pulseaudio curl git mercurial make binutils bison gcc build-essential libasound2 python-pip make libtool build-essential autoconf gettext dbus dbus-x11 libncurses5 libncurses5-dev libncursesw5 libncursesw5-dev autoconf automake cmake"
+    bindfs-path: /mnt/bind-root
+    path: /mnt/root
+  -
+    operation: chroot
+    name: setup-hostapd
+    commands:
+#     hostapd conf
+      - |
+        echo -e "interface=wlan0
+        driver=nl80211
+        ssid=$(cat /etc/hostname)
+        hw_mode=g
+        channel=6
+        wmm_enabled=0
+        macaddr_acl=0
+        auth_algs=1" > /etc/hostapd/hostapd.conf
+#      - sed -i 's/;daemon_conf.*/daemon_conf="\/etc\/hostapd\/hostapd.conf"/g' /etc/default/hostapd
+#     Set up hostapd default to use this conf file
+      - echo 'daemon_conf="/etc/hostapd/hostapd.conf"' >/etc/default/hostapd
+#     dnsmasq config
+      - |
+        echo -e "#Hotspot Config
+        #stop DNSmasq from using resolv.conf
+        no-resolv
+        #Interface to use
+        interface=wlan0
+        bind-interfaces
+        dhcp-range=192.168.1.10,192.168.1.20,12h" > /etc/default/dnsmasq
+#     Disable wpa-conf from being picked up automatically
+      - sed -i 's/\(.*\)wpa-conf/\#\1wpa-conf/g' /etc/network/interfaces
+#     Disable hostapd and dnsmasq
+      - systemctl disable hostapd
+      - systemctl disable dnsmasq
+    bindfs-path: /mnt/bind-root
+    path: /mnt/root

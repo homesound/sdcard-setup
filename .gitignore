@@ -1,5 +1,6 @@
 !.gitignore
 
+*.pyc
 .*.sw*
 *.so
 *.o
