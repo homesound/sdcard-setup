@@ -121,7 +121,7 @@ operations:
         #Interface to use
         interface=wlan0
         bind-interfaces
-        dhcp-range=192.168.1.10,192.168.1.20,12h" > /etc/default/dnsmasq
+        dhcp-range=192.168.1.10,192.168.1.20,12h" > /etc/dnsmasq.conf
 #     Disable wpa-conf from being picked up automatically
       - sed -i 's/\(.*\)wpa-conf/\#\1wpa-conf/g' /etc/network/interfaces
 #     Disable hostapd and dnsmasq
