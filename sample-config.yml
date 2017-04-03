@@ -70,7 +70,7 @@ operations:
       - "echo 'guru:password' | chpasswd"
       - "adduser guru sudo"
       - "mkdir -p /home/guru"
-      - "cp -R /etc/skel/ /home/guru/"
+      - "cp -R /etc/skel/. /home/guru/"
       - "chown -R guru:guru /home/guru/"
     bindfs-path: /mnt/bind-root
     path: /mnt/root
