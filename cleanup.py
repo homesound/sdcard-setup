@@ -19,7 +19,7 @@ def main(argv):
 	config = dict(default_config, **parse_config(args.config))
 
 	for m in config['mounts'][::-1]:
-		mount.unmount(m)
+		mount.unmount(m, False)
 
 if __name__ == '__main__':
 	main(sys.argv)

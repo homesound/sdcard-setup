@@ -19,21 +19,21 @@ def mount_pseudo(rootdir):
 	if ret != 0:
 		raise Exception('Failed to mount /dev/pts: {}'.format(stderr))
 
-def unmount_pseudo(rootdir):
+def unmount_pseudo(rootdir, fail_on_error=True):
 	ret, stdout, stderr = run('sudo umount {}/dev/pts'.format(rootdir))
-	if ret != 0:
+	if ret != 0 and fail_on_error:
 		raise Exception('Failed to unmount /dev/pts: {}'.format(stderr))
 
 	ret, stdout, stderr = run('sudo umount {}/dev'.format(rootdir))
-	if ret != 0:
+	if ret != 0 and fail_on_error:
 		raise Exception('Failed to unmount dev: {}'.format(stderr))
 
 	ret, stdout, stderr = run('sudo umount {}/proc'.format(rootdir))
-	if ret != 0:
+	if ret != 0 and fail_on_error:
 		raise Exception('Failed to unmount proc: {}'.format(stderr))
 
 	ret, stdout, stderr = run('sudo umount {}/sys'.format(rootdir))
-	if ret != 0:
+	if ret != 0 and fail_on_error:
 		raise Exception('Failed to unmount sys: {}'.format(stderr))
 
 
@@ -78,29 +78,29 @@ def mount(config, image):
 
 
 
-def unmount(config):
+def unmount(config, fail_on_error=True):
 	if config.get('cleanup', True) is False:
 		# Config tells us not to clean up
 		return
 
 	if config.get('pseudofs', False):
-		unmount_pseudo(config['mountpoint'])
+		unmount_pseudo(config['mountpoint'], fail_on_error)
 
 	if config.get('bindfs', None):
 		if config.get('pseudofs', False):
-			unmount_pseudo(config['bindfs']['mountpoint'])
+			unmount_pseudo(config['bindfs']['mountpoint'], fail_on_error)
 
 		ret, stdout, stderr = run('sudo umount {}'.format(config['bindfs']['mountpoint']))
-		if ret != 0:
+		if ret != 0 and fail_on_error:
 			raise Exception('Failed to run umount: {}'.format(stderr))
 
 	ret, stdout, stderr = run('sudo umount {}'.format(config['mountpoint']))
-	if ret != 0:
+	if ret != 0 and fail_on_error:
 		raise Exception('Failed to run umount: {}'.format(stderr))
 
 	if config.get('losetup', None):
 		ret, stdout, stderr = run('sudo losetup -d {}'.format(config['losetup']['dev']))
-		if ret != 0:
+		if ret != 0 and fail_on_error:
 			raise Exception('Failed to run losetup -d: {}'.format(stderr))
 
 
