@@ -53,7 +53,7 @@ operations:
     target: /mnt/bind-root/etc/rc.local
     data:
       - "/bin/su -c '/usr/bin/pulseaudio --daemonize --realtime --no-cpu-limit --log-target=newfile:/tmp/pulseaudio.log' - guru"
-    before: "exit 0"
+    before: "(?m)^exit 0$"
   -
     operation: chroot
     name: fix-locale

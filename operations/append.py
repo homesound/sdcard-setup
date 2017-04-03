@@ -1,17 +1,19 @@
 import os,sys,argparse
-
+import re
 
 def append(config):
 	with open(config['target'], 'r') as f:
 		data = f.read()
 	if config.get('before', None):
 		# We need to add the lines *before* a string
-		before_str = config['before']
-		if before_str not in data:
-			print '''Did not find string '{}'in '{}' '''.format(before_str, config['target'])
+		before_pattern = (config['before'])
+		res = re.findall(before_pattern, data)
+		if len(res) == 0:
+			print '''Did not find pattern '{}'in '{}' '''.format(before_pattern.pattern, config['target'])
 		else:
-			idx = data.index(before_str)
-			new_data = '\n'.join(['\n'] + config['data'])
+			m = re.finditer(before_pattern, data).next()
+			idx = m.start()
+			new_data = '\n'.join(['\n'] + config['data'] + ['\n'])
 			data = data[:idx] + new_data + data[idx:]
 
 		with open(config['target'], 'wb') as f:
