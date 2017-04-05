@@ -2,8 +2,12 @@ download:
   url: https://downloads.raspberrypi.org/raspbian_lite_latest
   force: false
   name: ""
-  result: result
+  result: image
   unzip: false
+
+expand:
+  size: 600*1024*1024
+  partition: 2
 
 mounts:
   -

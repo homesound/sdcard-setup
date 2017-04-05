@@ -11,7 +11,7 @@ import mount
 
 from common import run
 
-from operations import append, script, hostname, chroot
+from operations import append, script, hostname, chroot, expand
 
 default_config_str = '''
 download:
@@ -94,9 +94,12 @@ def main(argv):
 	print json.dumps(config, indent=2)
 
 	image = download(config['download'])
-	config['download']['result'] = image
+	config[config['download']['result']] = image
 
-	for m in config['mounts']:
+	if config.get('expand', None):
+		expand.expand(config['expand'], image)
+
+	for m in config.get('mounts', []):
 		mount.mount(m, image)
 
 	for entry in config.get('operations', []):
@@ -107,7 +110,7 @@ def main(argv):
 		elif entry['operation'] == 'chroot':
 			chroot.chroot(entry)
 
-	for m in config['mounts'][::-1]:
+	for m in config.get('mounts', [])[::-1]:
 		mount.unmount(m)
 if __name__ == '__main__':
 	main(sys.argv)

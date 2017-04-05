@@ -2,7 +2,7 @@ import os,sys,argparse
 import subprocess
 import time
 
-def run(cmd, stdout=None, stderr=None):
+def run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE):
 	print '${}'.format(cmd)
 	p = subprocess.Popen(cmd, stdout=stdout, stderr=stderr, shell=True)
 	p.wait()
